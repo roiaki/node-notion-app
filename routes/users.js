@@ -51,15 +51,17 @@ router.get("/:id", async(req, res) => {
 });
 
 // ユーザーフォロー(フォローしたり外したりを繰り返す)
+// :id フォローする相手のidのid
 router.put("/:id/follow", async(req, res) => {
-  if(req.user.userId !== req.params.id) {
+  // body:自分 req:フォローする相手が異なる場合
+  if(req.body.userId !== req.params.id) {
     try {
       // フォローする相手
       const user = await User.findById(req.params.id);
       // Iam
       const currentUser = await User.findById(req.body.userId);
       
-      // フォロワーに自分がいなかったらフォローできる
+      // フォロワーに相手がいなかったらフォローできる
       if(!user.followers.includes(req.body.userId)) {
         await user.updateOne({
           $push: {
@@ -75,9 +77,7 @@ router.put("/:id/follow", async(req, res) => {
         return res.status(200).json("フォローしました");
 
       } else {
-        return res
-          .status(403)
-          .json("あなたは既にこのユーザーをフォローしています");
+        return res.status(403).json("あなたは既にこのユーザーをフォローしています");
       }
     
     } catch(err) {
@@ -85,6 +85,46 @@ router.put("/:id/follow", async(req, res) => {
     }
   } else {
     return res.status(500).json("自分をフォローできません");
+  }
+  
+});
+
+// ユーザーアンフォロー(フォローしたり外したりを繰り返す)
+// :id フォローを外す相手のid
+router.put("/:id/unfollow", async(req, res) => {
+  // body:自分 req:フォローを外す相手が異なる場合
+  if(req.body.userId !== req.params.id) {
+    try {
+      // フォローを外す相手
+      const user = await User.findById(req.params.id);
+      // Iam
+      const currentUser = await User.findById(req.body.userId);
+      
+      // フォロワーに存在したらフォローを外せる
+      if(user.followers.includes(req.body.userId)) {
+        await user.updateOne({
+          // 配列から取り除くpull
+          $pull: {
+            followers: req.body.userId, // 自分
+          }
+        });
+        await currentUser.updateOne({
+          $pull: {
+            followings: req.params.id,
+          }
+        });
+
+        return res.status(200).json("フォローを外しました");
+
+      } else {
+        return res.status(403).json("このユーザーはフォロー解除できません");
+      }
+    
+    } catch(err) {
+      return res.status(500).json();
+    }
+  } else {
+    return res.status(500).json("自分自身をフォロー解除できません");
   }
   
 });
