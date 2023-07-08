@@ -54,8 +54,8 @@ router.delete("/:id", async(req, res) => {
 router.get("/", async (req, res) => {
   const userId = req.query.userId;
   const username = req.query.username;
-  console.log("ss" + userId);
-  console.log(username);
+  // console.log("ss" + userId);
+  // console.log(username);
   try {
     const user = userId
       ? await User.findById(userId)
